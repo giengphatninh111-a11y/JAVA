@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .sidebar { min-height: 100vh; background: #2c3e50; }
+        .sidebar a { color: #bdc3c7; text-decoration: none; display: block; padding: 12px 20px; }
+        .sidebar a:hover { background: #34495e; color: white; }
+        .sidebar .active { background: #3498db; color: white; }
+        .stat-card { border-radius: 15px; color: white; padding: 25px; }
+    </style>
+</head>
+<body class="bg-light">
+<div class="container-fluid">
+    <div class="row">
+
+        <!-- Sidebar -->
+        <div class="col-md-2 sidebar p-0">
+            <div class="p-3 text-white text-center border-bottom border-secondary">
+                <h5 class="mb-0">⚙️ Admin Panel</h5>
+            </div>
+            <a href="/admin" class="active">📊 Dashboard</a>
+            <a href="/admin/products">📦 Sản phẩm</a>
+            <a href="/admin/categories">📂 Danh mục</a>
+            <a href="/admin/orders">🛒 Đơn hàng</a>
+            <a href="/admin/users">👥 Người dùng</a>
+            <hr class="border-secondary">
+            <a href="/">🏠 Về trang chủ</a>
+        </div>
+
+        <!-- Main content -->
+        <div class="col-md-10 p-4">
+            <h3 class="fw-bold mb-4">📊 Dashboard</h3>
+
+            <!-- Stat cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card bg-primary">
+                        <h6>📦 Sản phẩm</h6>
+                        <h2 th:text="${totalProducts}">0</h2>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card bg-success">
+                        <h6>📂 Danh mục</h6>
+                        <h2 th:text="${totalCategories}">0</h2>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card bg-warning">
+                        <h6>🛒 Đơn hàng</h6>
+                        <h2 th:text="${totalOrders}">0</h2>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card bg-danger">
+                        <h6>👥 Người dùng</h6>
+                        <h2 th:text="${totalUsers}">0</h2>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Biểu đồ doanh thu -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">📈 Doanh Thu Theo Tháng (năm <span th:text="${#dates.year(#dates.createNow())}"></span>)</h5>
+                    <canvas id="revenueChart" height="100"></canvas>
+                </div>
+            </div>
+
+            <!-- Thao tác nhanh -->
+            <div class="card">
+                <div class="card-body">
+                    <h5>Thao tác nhanh</h5>
+                    <a href="/admin/products/add" class="btn btn-primary me-2">➕ Thêm sản phẩm</a>
+                    <a href="/admin/categories" class="btn btn-success me-2">➕ Thêm danh mục</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    const revenueData = /*[[${revenueData}]]*/ [];
+
+    // Khởi tạo 12 tháng với doanh thu = 0
+    const labels = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
+    const data = new Array(12).fill(0);
+
+    // Điền dữ liệu từ database
+    revenueData.forEach(function(item) {
+        const month = item[0] - 1; // tháng bắt đầu từ 1
+        data[month] = item[1];
+    });
+
+    new Chart(document.getElementById('revenueChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Doanh thu (đ)',
+                data: data,
+                backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                borderColor: 'rgba(52, 152, 219, 1)',
+                borderWidth: 1,
+                borderRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return new Intl.NumberFormat('vi-VN').format(context.raw) + ' đ';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return new Intl.NumberFormat('vi-VN').format(value) + ' đ';
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>
