@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Đăng Nhập - My Home</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-image: url('https://img4.thuthuatphanmem.vn/uploads/2020/12/26/anh-noi-that-phong-khach_052105313.jpg');
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 0;
+        }
+        .container { position: relative; z-index: 1; }
+        .login-card { border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+    </style>
+</head>
+<body class="d-flex align-items-center justify-content-center">
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card login-card p-4">
+                <div class="text-center mb-4">
+                    <h2> My Home </h2>
+                    <p class="text-muted">Đăng nhập vào tài khoản</p>
+                </div>
+
+                <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+                <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+                <form th:action="@{/login}" method="post">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email</label>
+                        <input type="email" name="email" class="form-control form-control-lg"
+                               placeholder="example@email.com" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Mật khẩu</label>
+                        <input type="password" name="password" class="form-control form-control-lg"
+                               placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg w-100">Đăng nhập</button>
+                </form>
+
+                <hr>
+                <p class="text-center mb-0">
+                    Bạn chưa có tài khoản ?
+                    <a href="/register" class="text-primary fw-bold">Đăng ký ngay</a>
+                </p>
+                <p class="text-center mt-2">
+                    <a href="/" class="text-muted">← Về trang chủ</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

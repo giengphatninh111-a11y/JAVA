@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giỏ Hàng - Nội Thất Nhà Cửa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .payment-option { cursor: pointer; border: 2px solid #dee2e6; border-radius: 10px; padding: 12px; transition: all 0.2s; }
+        .payment-option:hover { border-color: #adb5bd; }
+        .payment-option.selected { border-color: #0d6efd; background: #f0f5ff; }
+        #qrSection { display: none; }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/">My Home</a>
+        <div class="navbar-nav ms-auto">
+            <a class="nav-link" href="/">Trang chủ</a>
+            <a class="nav-link" href="/products">Sản phẩm</a>
+            <a class="nav-link position-relative active" href="/cart">
+                🛒 Giỏ Hàng
+                <span th:if="${cartCount != null and cartCount > 0}"
+                      class="badge bg-danger rounded-pill position-absolute"
+                      style="top:5px; font-size:0.65rem;"
+                      th:text="${cartCount}"></span>
+            </a>
+            <a th:if="${loggedUser == null}" class="nav-link" href="/login">Đăng nhập</a>
+            <th:block th:if="${loggedUser != null}">
+                <a th:if="${loggedUser.role.name() == 'ADMIN'}"
+                   class="nav-link text-warning fw-bold" href="/admin">⚙️ Trang Quản Lý</a>
+                <span class="nav-link text-light">👤 <span th:text="${loggedUser.fullName}"></span></span>
+                <a class="nav-link" href="/profile">📋 Đơn hàng</a>
+                <a class="nav-link text-danger" href="/logout">Đăng xuất</a>
+            </th:block>
+        </div>
+    </div>
+</nav>
+
+<div class="container my-5">
+    <h2 class="fw-bold mb-4">🛒 Giỏ Hàng</h2>
+
+    <div th:if="${cartError != null}" class="alert alert-danger alert-dismissible fade show">
+        ⚠️ <span th:text="${cartError}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div th:if="${#lists.isEmpty(cart)}" class="text-center py-5">
+        <h4 class="text-muted">Giỏ hàng của bạn đang trống 😢</h4>
+        <a href="/products" class="btn btn-dark mt-3">Tiếp tục mua sắm</a>
+    </div>
+
+    <div th:unless="${#lists.isEmpty(cart)}">
+        <div class="row">
+            <!-- Danh sách sản phẩm -->
+            <div class="col-md-8">
+                <div class="card mb-3" th:each="item : ${cart}">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-2">
+                                <img th:src="${item.imageUrl != null ? item.imageUrl : 'https://via.placeholder.com/80'}"
+                                     class="img-fluid rounded" style="height:80px; object-fit:cover;">
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="mb-0" th:text="${item.productName}">Tên</h6>
+                                <small class="text-muted"
+                                       th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' đ'">Giá</small>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <form th:action="@{/cart/update/{id}(id=${item.productId})}" method="post"
+                                      class="d-flex align-items-center justify-content-center gap-1">
+                                    <button type="submit" name="quantity"
+                                            th:value="${item.quantity - 1}"
+                                            class="btn btn-outline-secondary btn-sm"
+                                            th:disabled="${item.quantity <= 1}">−</button>
+                                    <span class="fw-bold mx-2" th:text="${item.quantity}">1</span>
+                                    <button type="submit" name="quantity"
+                                            th:value="${item.quantity + 1}"
+                                            class="btn btn-outline-secondary btn-sm">+</button>
+                                </form>
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <span class="text-danger fw-bold"
+                                      th:text="${#numbers.formatDecimal(item.subtotal, 0, 'COMMA', 0, 'POINT')} + ' đ'">Tổng</span>
+                            </div>
+                            <div class="col-md-1 text-end">
+                                <a th:href="@{/cart/remove/{id}(id=${item.productId})}"
+                                   class="btn btn-sm btn-outline-danger">✕</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tổng tiền + Form đặt hàng -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3">📋 Thông tin đặt hàng</h5>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span>Tổng tiền:</span>
+                            <span class="text-danger fw-bold"
+                                  th:text="${#numbers.formatDecimal(total, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span>
+                        </div>
+                        <hr>
+                        <form th:action="@{/cart/checkout}" method="post">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Địa chỉ giao hàng *</label>
+                                <textarea name="address" class="form-control" rows="3"
+                                          placeholder="Nhập địa chỉ giao hàng..." required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Số điện thoại *</label>
+                                <input type="text" name="phone" class="form-control"
+                                       placeholder="VD: 0901234567" required>
+                            </div>
+
+                            <!-- Phương thức thanh toán -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Phương thức thanh toán *</label>
+                                <div class="d-flex flex-column gap-2">
+                                    <label class="payment-option selected" id="optionCOD">
+                                        <input type="radio" name="paymentMethod" value="COD" checked hidden>
+                                        💵 Thanh toán tiền mặt khi nhận hàng
+                                    </label>
+                                    <label class="payment-option" id="optionQR">
+                                        <input type="radio" name="paymentMethod" value="QR" hidden>
+                                        📱 Thanh toán qua mã QR
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- QR hiện ra khi chọn QR -->
+                            <div id="qrSection" class="text-center mb-3 p-2 border rounded bg-white">
+                                <p class="small text-muted mb-2">Quét mã để thanh toán, sau đó bấm đặt hàng</p>
+                                <img src="https://img.vietqr.io/image/TCB-1703053600-compact2.png"
+                                     alt="QR Thanh toán"
+                                     class="img-fluid rounded"
+                                     style="max-width: 200px;">
+                                <p class="small text-danger mt-2 mb-0">⚠️ Vui lòng chuyển khoản trước khi đặt hàng</p>
+                            </div>
+
+                            <button type="submit" class="btn btn-dark w-100 btn-lg">
+                                ✅ Đặt hàng ngay
+                            </button>
+                        </form>
+                        <a href="/products" class="btn btn-outline-secondary w-100 mt-2">
+                            ← Tiếp tục mua sắm
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="bg-dark text-white text-center py-4 mt-5">
+    <p class="mb-0">© 2026 Nội Thất Nhà Cửa. All rights reserved.</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const optionCOD = document.getElementById('optionCOD');
+    const optionQR = document.getElementById('optionQR');
+    const qrSection = document.getElementById('qrSection');
+
+    optionCOD.addEventListener('click', () => {
+        optionCOD.classList.add('selected');
+        optionQR.classList.remove('selected');
+        qrSection.style.display = 'none';
+    });
+
+    optionQR.addEventListener('click', () => {
+        optionQR.classList.add('selected');
+        optionCOD.classList.remove('selected');
+        qrSection.style.display = 'block';
+    });
+</script>
+</body>
+</html>
